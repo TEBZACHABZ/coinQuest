@@ -16,9 +16,6 @@ CoinQuest is a fully functional Android prototype for tracking personal expenses
 - **Architecture**: MVVM (Model-View-ViewModel)
 - **UI**: Material Components, ViewBinding, ConstraintLayout
 
-## Video Demonstration
-[Link to your YouTube/Arc video will go here]
-
 ## Installation
 1. Clone the repository.
 2. Open in Android Studio.
