@@ -24,5 +24,7 @@ CoinQuest is a fully functional Android prototype for tracking personal expenses
 2. Open in Android Studio.
 3. Build and Run on an emulator or physical device.
 
+##Link
+GitHib link:https://github.com/TEBZACHABZ/coinQuest
 ## Testing
 Automated unit tests are located in `app/src/test/java/com/example/coinquest/`.
