@@ -35,11 +35,18 @@ class ExpenseAdapter(private val onPhotoClick: (String) -> Unit) : ListAdapter<E
             binding.tvExpenseAmount.text = currencyFormat.format(expense.amount)
 
             if (expense.photoPath != null) {
-                binding.ivExpensePhoto.visibility = View.VISIBLE
-                binding.ivExpensePhoto.setImageURI(Uri.fromFile(File(expense.photoPath)))
-                binding.ivExpensePhoto.setOnClickListener { onPhotoClick(expense.photoPath) }
+                val file = File(expense.photoPath)
+                if (file.exists()) {
+                    binding.cardExpensePhoto.visibility = View.VISIBLE
+                    binding.ivExpensePhoto.setImageURI(Uri.fromFile(file))
+                    binding.root.setOnClickListener { onPhotoClick(expense.photoPath) }
+                } else {
+                    binding.cardExpensePhoto.visibility = View.GONE
+                    binding.root.setOnClickListener(null)
+                }
             } else {
-                binding.ivExpensePhoto.visibility = View.GONE
+                binding.cardExpensePhoto.visibility = View.GONE
+                binding.root.setOnClickListener(null)
             }
         }
     }

@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.coinquest.databinding.FragmentExpensesBinding
 import com.example.coinquest.ui.AppViewModel
+import com.google.android.material.datepicker.MaterialDatePicker
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -24,7 +25,9 @@ class ExpensesFragment : Fragment() {
     private lateinit var viewModel: AppViewModel
     private lateinit var adapter: ExpenseAdapter
     
-    private var fromDate: Calendar = Calendar.getInstance().apply { add(Calendar.MONTH, -1) }
+    private var fromDate: Calendar = Calendar.getInstance().apply { 
+        set(Calendar.DAY_OF_MONTH, 1) 
+    }
     private var toDate: Calendar = Calendar.getInstance()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -40,19 +43,22 @@ class ExpensesFragment : Fragment() {
         updateDateDisplays()
         observeExpenses()
 
-        binding.btnFromDate.setOnClickListener {
-            showDatePicker(fromDate) {
-                updateDateDisplays()
-                observeExpenses()
-            }
+        binding.btnFilterDate.setOnClickListener {
+            showRangePicker()
         }
+    }
 
-        binding.btnToDate.setOnClickListener {
-            showDatePicker(toDate) {
-                updateDateDisplays()
-                observeExpenses()
-            }
+    private fun showRangePicker() {
+        val builder = MaterialDatePicker.Builder.dateRangePicker()
+        builder.setTitleText("Select Date Range")
+        val picker = builder.build()
+        picker.addOnPositiveButtonClickListener { range ->
+            fromDate.timeInMillis = range.first
+            toDate.timeInMillis = range.second
+            updateDateDisplays()
+            observeExpenses()
         }
+        picker.show(childFragmentManager, "date_range_picker")
     }
 
     private fun setupRecyclerView() {
@@ -70,15 +76,15 @@ class ExpensesFragment : Fragment() {
     }
 
     private fun updateDateDisplays() {
-        val format = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        binding.tvFromDate.text = format.format(fromDate.time)
-        binding.tvToDate.text = format.format(toDate.time)
+        val format = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+        binding.tvDateRange.text = "${format.format(fromDate.time)} - ${format.format(toDate.time)}"
     }
 
     private fun observeExpenses() {
-        // Use a new observer every time the date range changes
         viewModel.getExpensesBetweenDates(fromDate.timeInMillis, toDate.timeInMillis).observe(viewLifecycleOwner) { expenses ->
             adapter.submitList(expenses)
+            val total = expenses.sumOf { it.amount }
+            binding.tvTotalExpenses.text = "Total: ${java.text.NumberFormat.getCurrencyInstance().format(total)}"
         }
     }
 

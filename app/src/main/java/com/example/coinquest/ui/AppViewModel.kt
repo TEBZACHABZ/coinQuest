@@ -47,8 +47,39 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         return repository.getCategorySpending(startDate, endDate)
     }
 
+    fun getExpensesCount(startDate: Long, endDate: Long): LiveData<Int> {
+        return repository.getExpensesBetweenDates(startDate, endDate).map { it.size }
+    }
+
     // Goal operations
     fun setGoal(goal: Goal) = viewModelScope.launch(Dispatchers.IO) {
         repository.setGoal(goal)
+    }
+
+    fun getBadges(totalSpending: Double, expensesCount: Int, minGoal: Double, maxGoal: Double): List<Badge> {
+        val badges = mutableListOf<Badge>()
+        
+        // Budget Master
+        if (maxGoal > 0 && totalSpending <= maxGoal && totalSpending >= minGoal) {
+            badges.add(Badge("Budget Master", "Stayed within your goals!", android.R.drawable.ic_menu_compass, true))
+        } else {
+            badges.add(Badge("Budget Master", "Stay within your goals to earn this.", android.R.drawable.ic_menu_compass, false))
+        }
+
+        // Active Logger
+        if (expensesCount >= 5) {
+            badges.add(Badge("Active Logger", "Logged 5 or more expenses.", android.R.drawable.ic_menu_edit, true))
+        } else {
+            badges.add(Badge("Active Logger", "Log 5 expenses to earn this.", android.R.drawable.ic_menu_edit, false))
+        }
+
+        // Big Saver
+        if (minGoal > 0 && totalSpending < minGoal * 0.8) {
+            badges.add(Badge("Big Saver", "Spent 20% less than your min goal!", android.R.drawable.ic_menu_save, true))
+        } else {
+            badges.add(Badge("Big Saver", "Save even more to earn this.", android.R.drawable.ic_menu_save, false))
+        }
+
+        return badges
     }
 }

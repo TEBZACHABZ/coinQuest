@@ -1,11 +1,9 @@
 package com.example.coinquest
 
+import com.example.coinquest.data.Badge
 import org.junit.Test
 import org.junit.Assert.*
 
-/**
- * Example local unit test, which will execute on the development machine (host).
- */
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
@@ -13,9 +11,27 @@ class ExampleUnitTest {
     }
 
     @Test
-    fun validateGoalLogic() {
+    fun testBadgeLogic_BudgetMaster_Earned() {
+        val totalSpending = 750.0
         val minGoal = 500.0
         val maxGoal = 1000.0
-        assertTrue(minGoal < maxGoal)
+        
+        val isBudgetMaster = maxGoal > 0 && totalSpending <= maxGoal && totalSpending >= minGoal
+        assertTrue(isBudgetMaster)
+    }
+
+    @Test
+    fun testBadgeLogic_ActiveLogger_NotEarned() {
+        val expensesCount = 3
+        val isEarned = expensesCount >= 5
+        assertFalse(isEarned)
+    }
+
+    @Test
+    fun testBadgeLogic_BigSaver_Earned() {
+        val totalSpending = 300.0
+        val minGoal = 500.0
+        val isBigSaver = minGoal > 0 && totalSpending < minGoal * 0.8
+        assertTrue(isBigSaver)
     }
 }

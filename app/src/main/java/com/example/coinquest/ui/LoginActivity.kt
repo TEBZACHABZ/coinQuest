@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import android.util.Log
 import com.example.coinquest.MainActivity
 import com.example.coinquest.databinding.ActivityLoginBinding
 import kotlinx.coroutines.launch
@@ -23,17 +24,31 @@ class LoginActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this)[AppViewModel::class.java]
 
         binding.btnLogin.setOnClickListener {
-            val username = binding.etUsername.text.toString()
-            val password = binding.etPassword.text.toString()
+            val username = binding.etUsername.text.toString().trim()
+            val password = binding.etPassword.text.toString().trim()
 
             if (username.isNotEmpty() && password.isNotEmpty()) {
                 lifecycleScope.launch {
-                    val user = viewModel.loginUser(username)
-                    if ((user != null) && (user.password == password)) {
-                        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                        finish()
-                    } else {
-                        Toast.makeText(this@LoginActivity, "Invalid username or password", Toast.LENGTH_SHORT).show()
+                    try {
+                        Log.d("LoginActivity", "Attempting login for user: $username")
+                        val user = viewModel.loginUser(username)
+                        if (user != null) {
+                            Log.d("LoginActivity", "User found in database. Checking password...")
+                            if (user.password == password) {
+                                Log.d("LoginActivity", "Login successful!")
+                                startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                finish()
+                            } else {
+                                Log.d("LoginActivity", "Password mismatch.")
+                                Toast.makeText(this@LoginActivity, "Invalid password", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Log.d("LoginActivity", "No user found with username: $username")
+                            Toast.makeText(this@LoginActivity, "Username not found. Please register.", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Log.e("LoginActivity", "Error during login", e)
+                        Toast.makeText(this@LoginActivity, "An error occurred: ${e.message}", Toast.LENGTH_LONG).show()
                     }
                 }
             } else {

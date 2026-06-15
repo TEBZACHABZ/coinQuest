@@ -20,6 +20,9 @@ import com.example.coinquest.data.Category
 import com.example.coinquest.data.Expense
 import com.example.coinquest.databinding.FragmentAddExpenseBinding
 import com.example.coinquest.ui.AppViewModel
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -34,10 +37,21 @@ class AddExpenseFragment : Fragment() {
     private var selectedCategory: Category? = null
     private var categoriesList: List<Category> = emptyList()
 
+    private val requestCameraPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            dispatchTakePictureIntent()
+        } else {
+            Toast.makeText(requireContext(), "Camera permission is required to take photos", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private val takePictureLauncher = registerForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         if (success) {
             binding.ivPhotoPreview.visibility = View.VISIBLE
-            binding.ivPhotoPreview.setImageURI(Uri.fromFile(File(currentPhotoPath!!)))
+            binding.layoutPhotoPlaceholder.visibility = View.GONE
+            currentPhotoPath?.let { path ->
+                binding.ivPhotoPreview.setImageURI(Uri.fromFile(File(path)))
+            }
         }
     }
 
@@ -50,19 +64,46 @@ class AddExpenseFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         viewModel = ViewModelProvider(requireActivity()).get(AppViewModel::class.java)
 
+        // Restore photo path if fragment was recreated
+        savedInstanceState?.getString("photo_path")?.let {
+            currentPhotoPath = it
+            binding.ivPhotoPreview.visibility = View.VISIBLE
+            binding.layoutPhotoPlaceholder.visibility = View.GONE
+            binding.ivPhotoPreview.setImageURI(Uri.fromFile(File(it)))
+        }
+
         setupCategorySpinner()
         setupDateTimePickers()
+        
+        // Set initial date display
+        binding.etDate.setText(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(selectedDate.time))
 
         binding.btnAddCategory.setOnClickListener {
             showAddCategoryDialog()
         }
 
-        binding.btnAddPhoto.setOnClickListener {
-            dispatchTakePictureIntent()
+        binding.cardAddPhoto.setOnClickListener {
+            checkCameraPermissionAndLaunch()
         }
 
         binding.btnSaveExpense.setOnClickListener {
             saveExpense()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("photo_path", currentPhotoPath)
+    }
+
+    private fun checkCameraPermissionAndLaunch() {
+        when {
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED -> {
+                dispatchTakePictureIntent()
+            }
+            else -> {
+                requestCameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }
     }
 
@@ -76,22 +117,22 @@ class AddExpenseFragment : Fragment() {
     }
 
     private fun setupDateTimePickers() {
-        binding.btnPickDate.setOnClickListener {
+        binding.etDate.setOnClickListener {
             DatePickerDialog(requireContext(), { _, year, month, dayOfMonth ->
                 selectedDate.set(year, month, dayOfMonth)
-                binding.tvSelectedDate.text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(selectedDate.time)
+                binding.etDate.setText(SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(selectedDate.time))
             }, selectedDate.get(Calendar.YEAR), selectedDate.get(Calendar.MONTH), selectedDate.get(Calendar.DAY_OF_MONTH)).show()
         }
 
-        binding.btnStartTime.setOnClickListener {
+        binding.etStartTime.setOnClickListener {
             TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
-                binding.tvStartTime.text = String.format("%02d:%02d", hourOfDay, minute)
+                binding.etStartTime.setText(String.format("%02d:%02d", hourOfDay, minute))
             }, 12, 0, true).show()
         }
 
-        binding.btnEndTime.setOnClickListener {
+        binding.etEndTime.setOnClickListener {
             TimePickerDialog(requireContext(), { _, hourOfDay, minute ->
-                binding.tvEndTime.text = String.format("%02d:%02d", hourOfDay, minute)
+                binding.etEndTime.setText(String.format("%02d:%02d", hourOfDay, minute))
             }, 13, 0, true).show()
         }
     }
@@ -134,8 +175,8 @@ class AddExpenseFragment : Fragment() {
     private fun saveExpense() {
         val amountStr = binding.etAmount.text.toString()
         val description = binding.etDescription.text.toString()
-        val startTime = binding.tvStartTime.text.toString()
-        val endTime = binding.tvEndTime.text.toString()
+        val startTime = binding.etStartTime.text.toString()
+        val endTime = binding.etEndTime.text.toString()
         val categoryIndex = binding.spinnerCategory.selectedItemPosition
 
         if (amountStr.isEmpty() || categoryIndex == -1) {
@@ -158,7 +199,13 @@ class AddExpenseFragment : Fragment() {
 
         viewModel.insertExpense(expense)
         Toast.makeText(requireContext(), "Expense saved", Toast.LENGTH_SHORT).show()
-        // Reset fields or navigate
+        
+        // Reset fields
+        binding.etAmount.text?.clear()
+        binding.etDescription.text?.clear()
+        binding.ivPhotoPreview.visibility = View.GONE
+        binding.layoutPhotoPlaceholder.visibility = View.VISIBLE
+        currentPhotoPath = null
     }
 
     override fun onDestroyView() {
