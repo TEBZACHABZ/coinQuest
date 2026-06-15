@@ -39,3 +39,5 @@ Run them using `./gradlew test`.
 ## Logging
 Check Logcat with tag `ReportsFragment` or `GoalsFragment` to see the app logic in action.
 
+## YouTube Link
+https://youtu.be/elrn1dr2nyU?si=aV2D3C-fDw30NHx_
